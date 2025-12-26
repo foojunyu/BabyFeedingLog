@@ -125,7 +125,7 @@ public partial class Form1 : Form
             EndTime = dtpSleepEnd.Value,
             Notes = txtSleepNotes.Text
         };
-        if (entry.EndTime <= entry.StartTime)
+        if (entry.EndTime < entry.StartTime)
         {
             MessageBox.Show("End time must be after start time!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
