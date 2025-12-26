@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Add Diaper Change - {{ baby.name }}{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('baby_dashboard', baby_id=baby.id) }}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+
+<h2>Log Diaper Change for {{ baby.name }}</h2>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="timestamp">Date & Time *</label>
+        <input type="datetime-local" id="timestamp" name="timestamp" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="change_type">Type *</label>
+        <select id="change_type" name="change_type" required>
+            <option value="wet">Wet</option>
+            <option value="dirty">Dirty</option>
+            <option value="both">Both</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes"></textarea>
+    </div>
+    
+    <div class="form-group" style="text-align: center;">
+        <button type="submit" class="btn">Log Diaper Change</button>
+    </div>
+</form>
+
+<script>
+    // Set current date and time as default
+    document.addEventListener('DOMContentLoaded', function() {
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('timestamp').value = now.toISOString().slice(0, 16);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Feeding History - {{ baby.name }}{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('baby_dashboard', baby_id=baby.id) }}" class="btn btn-secondary">← Back to Dashboard</a>
+    <a href="{{ url_for('add_feeding', baby_id=baby.id) }}" class="btn">➕ Add Feeding</a>
+</div>
+
+<h2>Feeding History for {{ baby.name }}</h2>
+
+{% if feedings %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Type</th>
+                <th>Amount (ml)</th>
+                <th>Duration (min)</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feeding in feedings %}
+            <tr>
+                <td>{{ feeding.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><span class="badge badge-{{ feeding.feeding_type }}">{{ feeding.feeding_type|upper }}</span></td>
+                <td>{{ feeding.amount or '-' }}</td>
+                <td>{{ feeding.duration or '-' }}</td>
+                <td>{{ feeding.notes or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="card" style="text-align: center; padding: 40px;">
+        <p>No feeding records yet.</p>
+        <a href="{{ url_for('add_feeding', baby_id=baby.id) }}" class="btn">Add First Feeding</a>
+    </div>
+{% endif %}
+{% endblock %}

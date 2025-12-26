@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ baby.name }}'s Dashboard{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Home</a>
+</div>
+
+<h2>👶 {{ baby.name }}'s Dashboard</h2>
+<p style="text-align: center; font-size: 1.2em; color: #666; margin-bottom: 20px;">
+    Age: {{ age }} | Born: {{ baby.date_of_birth.strftime('%B %d, %Y') }}
+</p>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Today's Feedings</div>
+        <div class="stat-value">{{ recent_feedings|length }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="stat-label">Recent Sleep Sessions</div>
+        <div class="stat-value">{{ recent_sleep|length }}</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="stat-label">Diaper Changes</div>
+        <div class="stat-value">{{ recent_diapers|length }}</div>
+    </div>
+</div>
+
+<div class="nav">
+    <a href="{{ url_for('add_feeding', baby_id=baby.id) }}" class="btn">🍼 Log Feeding</a>
+    <a href="{{ url_for('add_sleep', baby_id=baby.id) }}" class="btn">😴 Log Sleep</a>
+    <a href="{{ url_for('add_diaper', baby_id=baby.id) }}" class="btn">🧷 Log Diaper</a>
+    <a href="{{ url_for('add_growth', baby_id=baby.id) }}" class="btn btn-success">📏 Add Growth</a>
+    <a href="{{ url_for('add_milestone', baby_id=baby.id) }}" class="btn btn-success">🎯 Add Milestone</a>
+</div>
+
+<div class="card">
+    <h3>Recent Feedings</h3>
+    {% if recent_feedings %}
+        {% for feeding in recent_feedings %}
+        <div class="activity-item">
+            <span class="badge badge-{{ feeding.feeding_type }}">{{ feeding.feeding_type|upper }}</span>
+            <span class="timestamp">{{ feeding.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% if feeding.amount %}
+            <p>Amount: {{ feeding.amount }} ml</p>
+            {% endif %}
+            {% if feeding.duration %}
+            <p>Duration: {{ feeding.duration }} minutes</p>
+            {% endif %}
+            {% if feeding.notes %}
+            <p>Notes: {{ feeding.notes }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <a href="{{ url_for('list_feedings', baby_id=baby.id) }}" class="btn btn-secondary">View All Feedings</a>
+    {% else %}
+        <p>No feeding records yet. <a href="{{ url_for('add_feeding', baby_id=baby.id) }}">Add one now!</a></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Recent Sleep Sessions</h3>
+    {% if recent_sleep %}
+        {% for sleep in recent_sleep %}
+        <div class="activity-item">
+            <span class="timestamp">Start: {{ sleep.start_time.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% if sleep.end_time %}
+            <p>End: {{ sleep.end_time.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p>Duration: {{ sleep.duration }} minutes ({{ (sleep.duration / 60)|round(1) }} hours)</p>
+            {% else %}
+            <p>Still sleeping...</p>
+            {% endif %}
+            {% if sleep.notes %}
+            <p>Notes: {{ sleep.notes }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No sleep records yet. <a href="{{ url_for('add_sleep', baby_id=baby.id) }}">Add one now!</a></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Recent Diaper Changes</h3>
+    {% if recent_diapers %}
+        {% for diaper in recent_diapers %}
+        <div class="activity-item">
+            <span class="badge badge-{{ diaper.change_type }}">{{ diaper.change_type|upper }}</span>
+            <span class="timestamp">{{ diaper.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% if diaper.notes %}
+            <p>Notes: {{ diaper.notes }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No diaper change records yet. <a href="{{ url_for('add_diaper', baby_id=baby.id) }}">Add one now!</a></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Growth Records</h3>
+    {% if growth_records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Weight (kg)</th>
+                    <th>Height (cm)</th>
+                    <th>Head Circ. (cm)</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in growth_records %}
+                <tr>
+                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ record.weight or '-' }}</td>
+                    <td>{{ record.height or '-' }}</td>
+                    <td>{{ record.head_circumference or '-' }}</td>
+                    <td>{{ record.notes or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No growth records yet. <a href="{{ url_for('add_growth', baby_id=baby.id) }}">Add one now!</a></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Milestones</h3>
+    {% if milestones %}
+        {% for milestone in milestones %}
+        <div class="activity-item">
+            <strong>{{ milestone.milestone_type|upper }}</strong> - 
+            <span class="timestamp">{{ milestone.date.strftime('%Y-%m-%d') }}</span>
+            <p>{{ milestone.description }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No milestones recorded yet. <a href="{{ url_for('add_milestone', baby_id=baby.id) }}">Add one now!</a></p>
+    {% endif %}
+</div>
+{% endblock %}
