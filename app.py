@@ -10,8 +10,9 @@ import os
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///baby_log.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# Use environment variable for SECRET_KEY in production, fallback to generated key for development
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
+# Use environment variable for SECRET_KEY in production
+# For development, use a fixed key (not secure for production!)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
 
 db.init_app(app)
 
@@ -82,19 +83,48 @@ def add_feeding(baby_id):
     """Add a feeding record"""
     baby = Baby.query.get_or_404(baby_id)
     if request.method == 'POST':
-        data = request.form
-        timestamp = datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M')
-        feeding = Feeding(
-            baby_id=baby_id,
-            timestamp=timestamp,
-            feeding_type=data['feeding_type'],
-            amount=float(data['amount']) if data.get('amount') else None,
-            duration=int(data['duration']) if data.get('duration') else None,
-            notes=data.get('notes', '')
-        )
-        db.session.add(feeding)
-        db.session.commit()
-        return redirect(url_for('baby_dashboard', baby_id=baby_id))
+        try:
+            data = request.form
+            timestamp = datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M')
+            
+            # Safely parse numeric values with validation
+            amount = None
+            if data.get('amount'):
+                try:
+                    amount = float(data['amount'])
+                    if amount < 0:
+                        raise ValueError("Amount must be positive")
+                except ValueError:
+                    return render_template('add_feeding.html', baby=baby, 
+                                         error="Invalid amount value. Please enter a valid number.")
+            
+            duration = None
+            if data.get('duration'):
+                try:
+                    duration = int(data['duration'])
+                    if duration < 0:
+                        raise ValueError("Duration must be positive")
+                except ValueError:
+                    return render_template('add_feeding.html', baby=baby, 
+                                         error="Invalid duration value. Please enter a valid number.")
+            
+            feeding = Feeding(
+                baby_id=baby_id,
+                timestamp=timestamp,
+                feeding_type=data['feeding_type'],
+                amount=amount,
+                duration=duration,
+                notes=data.get('notes', '')
+            )
+            db.session.add(feeding)
+            db.session.commit()
+            return redirect(url_for('baby_dashboard', baby_id=baby_id))
+        except ValueError as e:
+            return render_template('add_feeding.html', baby=baby, 
+                                 error=f"Invalid input: {str(e)}")
+        except Exception as e:
+            return render_template('add_feeding.html', baby=baby, 
+                                 error=f"An error occurred: {str(e)}")
     return render_template('add_feeding.html', baby=baby)
 
 
@@ -158,19 +188,58 @@ def add_growth(baby_id):
     """Add a growth record"""
     baby = Baby.query.get_or_404(baby_id)
     if request.method == 'POST':
-        data = request.form
-        record_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        growth = GrowthRecord(
-            baby_id=baby_id,
-            date=record_date,
-            weight=float(data['weight']) if data.get('weight') else None,
-            height=float(data['height']) if data.get('height') else None,
-            head_circumference=float(data['head_circumference']) if data.get('head_circumference') else None,
-            notes=data.get('notes', '')
-        )
-        db.session.add(growth)
-        db.session.commit()
-        return redirect(url_for('baby_dashboard', baby_id=baby_id))
+        try:
+            data = request.form
+            record_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            
+            # Safely parse numeric values with validation
+            weight = None
+            if data.get('weight'):
+                try:
+                    weight = float(data['weight'])
+                    if weight < 0:
+                        raise ValueError("Weight must be positive")
+                except ValueError:
+                    return render_template('add_growth.html', baby=baby, 
+                                         error="Invalid weight value. Please enter a valid number.")
+            
+            height = None
+            if data.get('height'):
+                try:
+                    height = float(data['height'])
+                    if height < 0:
+                        raise ValueError("Height must be positive")
+                except ValueError:
+                    return render_template('add_growth.html', baby=baby, 
+                                         error="Invalid height value. Please enter a valid number.")
+            
+            head_circumference = None
+            if data.get('head_circumference'):
+                try:
+                    head_circumference = float(data['head_circumference'])
+                    if head_circumference < 0:
+                        raise ValueError("Head circumference must be positive")
+                except ValueError:
+                    return render_template('add_growth.html', baby=baby, 
+                                         error="Invalid head circumference value. Please enter a valid number.")
+            
+            growth = GrowthRecord(
+                baby_id=baby_id,
+                date=record_date,
+                weight=weight,
+                height=height,
+                head_circumference=head_circumference,
+                notes=data.get('notes', '')
+            )
+            db.session.add(growth)
+            db.session.commit()
+            return redirect(url_for('baby_dashboard', baby_id=baby_id))
+        except ValueError as e:
+            return render_template('add_growth.html', baby=baby, 
+                                 error=f"Invalid input: {str(e)}")
+        except Exception as e:
+            return render_template('add_growth.html', baby=baby, 
+                                 error=f"An error occurred: {str(e)}")
     return render_template('add_growth.html', baby=baby)
 
 

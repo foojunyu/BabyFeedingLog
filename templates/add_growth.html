@@ -9,6 +9,12 @@
 
 <h2>Add Growth Record for {{ baby.name }}</h2>
 
+{% if error %}
+<div style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #c62828;">
+    <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+
 <form method="POST">
     <div class="form-group">
         <label for="date">Date *</label>
