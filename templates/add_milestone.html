@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Add Milestone - {{ baby.name }}{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('baby_dashboard', baby_id=baby.id) }}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+
+<h2>Add Milestone for {{ baby.name }}</h2>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="date">Date *</label>
+        <input type="date" id="date" name="date" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="milestone_type">Milestone Type *</label>
+        <select id="milestone_type" name="milestone_type" required>
+            <option value="motor">Motor Skills</option>
+            <option value="cognitive">Cognitive</option>
+            <option value="social">Social/Emotional</option>
+            <option value="language">Language/Communication</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="description">Description *</label>
+        <textarea id="description" name="description" required 
+                  placeholder="e.g., First smile, rolled over, said first word..."></textarea>
+    </div>
+    
+    <div class="form-group" style="text-align: center;">
+        <button type="submit" class="btn">Add Milestone</button>
+    </div>
+</form>
+
+<script>
+    // Set current date as default
+    document.addEventListener('DOMContentLoaded', function() {
+        var now = new Date();
+        document.getElementById('date').value = now.toISOString().split('T')[0];
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('add_baby') }}" class="btn">➕ Add New Baby</a>
+</div>
+
+{% if babies %}
+    <h2>Your Babies</h2>
+    <div class="baby-list">
+        {% for baby in babies %}
+        <a href="{{ url_for('baby_dashboard', baby_id=baby.id) }}" style="text-decoration: none;">
+            <div class="baby-card">
+                <h3>👶 {{ baby.name }}</h3>
+                <p>Born: {{ baby.date_of_birth.strftime('%B %d, %Y') }}</p>
+                {% if baby.gender %}
+                <p>{{ baby.gender }}</p>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card" style="text-align: center; padding: 60px;">
+        <h2>Welcome to Baby Feeding & Progress Log! 👶</h2>
+        <p style="margin: 20px 0; font-size: 1.1em;">Get started by adding your baby's profile.</p>
+        <a href="{{ url_for('add_baby') }}" class="btn">Add Your First Baby</a>
+    </div>
+{% endif %}
+
+<div class="card" style="margin-top: 40px;">
+    <h3>About This App</h3>
+    <p>Track all aspects of your baby's development:</p>
+    <ul style="margin: 15px 0 15px 30px; line-height: 1.8;">
+        <li>🍼 Feeding logs (breast, bottle, solids)</li>
+        <li>😴 Sleep tracking</li>
+        <li>🧷 Diaper changes</li>
+        <li>📏 Growth measurements (weight, height, head circumference)</li>
+        <li>🎯 Developmental milestones</li>
+    </ul>
+</div>
+{% endblock %}

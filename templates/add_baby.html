@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Add Baby{% endblock %}
+
+{% block content %}
+<div class="nav">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Home</a>
+</div>
+
+<h2>Add New Baby</h2>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="name">Baby's Name *</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="date_of_birth">Date of Birth *</label>
+        <input type="date" id="date_of_birth" name="date_of_birth" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+            <option value="">Select...</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    
+    <div class="form-group" style="text-align: center;">
+        <button type="submit" class="btn">Add Baby</button>
+    </div>
+</form>
+{% endblock %}
