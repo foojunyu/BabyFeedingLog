@@ -48,12 +48,18 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Run the application:
+4. (Optional) Enable debug mode for development:
+```bash
+export FLASK_DEBUG=1  # On Windows: set FLASK_DEBUG=1
+```
+**Note**: Debug mode is disabled by default for security. Only enable it in development environments.
+
+5. Run the application:
 ```bash
 python app.py
 ```
 
-5. Open your web browser and navigate to:
+6. Open your web browser and navigate to:
 ```
 http://localhost:5000
 ```
