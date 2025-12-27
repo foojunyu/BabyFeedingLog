@@ -301,16 +301,29 @@ public partial class Form1 : Form
 
         try
         {
-            lblOcrStatusMessage.Text = "Extracting text from image...";
+            lblOcrStatusMessage.Text = "Extracting text from image with preprocessing...";
             lblOcrStatusMessage.ForeColor = Color.DarkBlue;
             Application.DoEvents();
 
-            string extractedText = _ocrService.ExtractTextFromImage(_selectedImagePath);
+            // Extract text with preprocessing enabled by default
+            string extractedText = _ocrService.ExtractTextFromImage(_selectedImagePath, preprocessImage: true);
             
             if (string.IsNullOrWhiteSpace(extractedText))
             {
-                txtExtractedText.Text = "(No text detected in image)";
-                lblOcrStatusMessage.Text = "No text detected in image.";
+                // Try again without preprocessing
+                lblOcrStatusMessage.Text = "Retrying without preprocessing...";
+                Application.DoEvents();
+                extractedText = _ocrService.ExtractTextFromImage(_selectedImagePath, preprocessImage: false);
+            }
+            
+            if (string.IsNullOrWhiteSpace(extractedText))
+            {
+                txtExtractedText.Text = "(No text detected in image)\n\nTips for better results:\n" +
+                    "• Use clear, high-resolution images\n" +
+                    "• Ensure good lighting and contrast\n" +
+                    "• Avoid blurry or tilted images\n" +
+                    "• Make sure text is clearly visible";
+                lblOcrStatusMessage.Text = "No text detected. Try a clearer image.";
                 lblOcrStatusMessage.ForeColor = Color.DarkOrange;
             }
             else
@@ -318,13 +331,29 @@ public partial class Form1 : Form
                 txtExtractedText.Text = extractedText;
                 btnPopulateFeeding.Enabled = true;
                 btnPopulateGrowth.Enabled = true;
-                lblOcrStatusMessage.Text = $"Text extracted successfully! ({extractedText.Length} characters)";
-                lblOcrStatusMessage.ForeColor = Color.DarkGreen;
+                
+                // Get confidence level
+                float confidence = _ocrService.GetLastConfidence(_selectedImagePath);
+                string confidenceText = confidence > 0 ? $" (Confidence: {confidence * 100:F0}%)" : "";
+                
+                lblOcrStatusMessage.Text = $"Text extracted successfully! ({extractedText.Length} characters){confidenceText}";
+                
+                // Color code based on confidence
+                if (confidence >= 0.8f)
+                    lblOcrStatusMessage.ForeColor = Color.DarkGreen;
+                else if (confidence >= 0.5f)
+                    lblOcrStatusMessage.ForeColor = Color.DarkOrange;
+                else
+                    lblOcrStatusMessage.ForeColor = Color.DarkRed;
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error extracting text: {ex.Message}", "OCR Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Error extracting text: {ex.Message}\n\nPlease ensure:\n" +
+                "• The image file is valid and not corrupted\n" +
+                "• Tesseract data files are properly installed\n" +
+                "• The image contains readable text", 
+                "OCR Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             lblOcrStatusMessage.Text = "Error extracting text.";
             lblOcrStatusMessage.ForeColor = Color.DarkRed;
         }

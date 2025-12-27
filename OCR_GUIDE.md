@@ -72,6 +72,18 @@ The Baby Feeding Log application now includes an **OCR Import** tab that allows 
 3. **Language**: Currently supports English text recognition
 4. **Review Data**: Always review auto-populated data before saving
 5. **Notes Preserved**: Original extracted text is saved in the notes field
+6. **High Resolution**: Higher resolution images (300 DPI or more) work best
+7. **Straight Text**: Avoid rotated or tilted text when possible
+8. **Clean Background**: Text on plain backgrounds is easier to read
+
+### Accuracy Improvements:
+
+The OCR system now includes:
+- **Automatic Image Preprocessing**: Converts images to grayscale and increases contrast
+- **Dual-Pass Extraction**: Tries with preprocessing first, then without if needed
+- **Confidence Scoring**: Shows OCR confidence percentage (green = high, orange = medium, red = low)
+- **Optimized Settings**: Configured for medical records and feeding logs
+- **Character Whitelist**: Focuses on alphanumeric characters and common punctuation
 
 ### Technical Details:
 
@@ -80,10 +92,13 @@ The Baby Feeding Log application now includes an **OCR Import** tab that allows 
 - **Pattern Matching**: Smart regex-based parsing for common units
 - **Performance**: Compiled regex patterns for fast processing
 - **Memory Management**: Proper image disposal to prevent memory leaks
+- **Image Processing**: Grayscale conversion and contrast enhancement
 
 ### Troubleshooting:
 
-- **"No text detected"**: Try improving image quality or contrast
+- **"No text detected"**: Try improving image quality or contrast, ensure text is clearly visible
+- **Low confidence scores**: Use higher resolution images with better lighting
 - **Incorrect parsing**: Review and manually adjust the populated fields
 - **Missing tessdata error**: Ensure tessdata/eng.traineddata file exists in the application directory
+- **Inaccurate results**: Try taking a new photo with better lighting and focus
 
