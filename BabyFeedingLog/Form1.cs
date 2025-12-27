@@ -1,5 +1,6 @@
 using BabyFeedingLog.Models;
 using BabyFeedingLog.Services;
+using System.Text.RegularExpressions;
 
 namespace BabyFeedingLog;
 
@@ -9,6 +10,17 @@ public partial class Form1 : Form
     private readonly DataManager _dataManager;
     private readonly OcrService _ocrService;
     private string? _selectedImagePath;
+    private TabControl? _mainTabControl;
+
+    // Compiled regex patterns for better performance
+    private static readonly Regex MlPattern = new(@"(\d+\.?\d*)\s*ml", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex OzPattern = new(@"(\d+\.?\d*)\s*oz", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex WeightKgPattern = new(@"weight.*?(\d+\.?\d*)\s*kg", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex WeightLbsPattern = new(@"weight.*?(\d+\.?\d*)\s*(lbs|lb|pounds?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex HeightCmPattern = new(@"(height|length).*?(\d+\.?\d*)\s*cm", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex HeightInPattern = new(@"(height|length).*?(\d+\.?\d*)\s*(in|inch)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex HeadCmPattern = new(@"head.*?(\d+\.?\d*)\s*cm", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex HeadInPattern = new(@"head.*?(\d+\.?\d*)\s*(in|inch)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public Form1()
     {
@@ -17,6 +29,9 @@ public partial class Form1 : Form
         _ocrService = new OcrService();
         LoadData();
         UpdateUI();
+        
+        // Cache reference to TabControl
+        _mainTabControl = Controls.Find("tabControl", true).FirstOrDefault() as TabControl;
     }
 
     private void LoadData()
@@ -216,6 +231,22 @@ public partial class Form1 : Form
         SaveData();
     }
 
+    // Helper method to switch to a specific tab
+    private void SwitchToTab(string tabName)
+    {
+        if (_mainTabControl != null)
+        {
+            for (int i = 0; i < _mainTabControl.TabPages.Count; i++)
+            {
+                if (_mainTabControl.TabPages[i].Text == tabName)
+                {
+                    _mainTabControl.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
     // OCR Tab
     private void btnSelectImage_Click(object sender, EventArgs e)
     {
@@ -230,6 +261,13 @@ public partial class Form1 : Form
             try
             {
                 _selectedImagePath = openFileDialog.FileName;
+                
+                // Dispose previous image to prevent memory leak
+                if (picImagePreview.Image != null)
+                {
+                    picImagePreview.Image.Dispose();
+                    picImagePreview.Image = null;
+                }
                 
                 // Load and display the image
                 using var originalImage = Image.FromFile(_selectedImagePath);
@@ -311,9 +349,9 @@ public partial class Form1 : Form
             {
                 var lowerLine = line.ToLower();
                 
-                // Look for ml or oz amounts
-                var mlMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(\d+\.?\d*)\s*ml");
-                var ozMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(\d+\.?\d*)\s*oz");
+                // Look for ml or oz amounts using compiled regex
+                var mlMatch = MlPattern.Match(lowerLine);
+                var ozMatch = OzPattern.Match(lowerLine);
                 
                 if (mlMatch.Success && double.TryParse(mlMatch.Groups[1].Value, out double mlAmount))
                 {
@@ -339,18 +377,7 @@ public partial class Form1 : Form
             txtFeedingNotes.Text = $"Imported from OCR:\n{text}";
             
             // Switch to feeding tab
-            var tabControl = Controls.Find("tabControl", true).FirstOrDefault() as TabControl;
-            if (tabControl != null)
-            {
-                for (int i = 0; i < tabControl.TabPages.Count; i++)
-                {
-                    if (tabControl.TabPages[i].Text == "Feeding")
-                    {
-                        tabControl.SelectedIndex = i;
-                        break;
-                    }
-                }
-            }
+            SwitchToTab("Feeding");
             
             MessageBox.Show("Feeding form populated with extracted data. Please review and adjust before saving.", 
                 "Data Populated", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -379,9 +406,9 @@ public partial class Form1 : Form
             {
                 var lowerLine = line.ToLower();
                 
-                // Look for weight (kg or lbs)
-                var kgMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"weight.*?(\d+\.?\d*)\s*kg");
-                var lbsMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"weight.*?(\d+\.?\d*)\s*(lbs|lb|pounds?)");
+                // Look for weight (kg or lbs) using compiled regex
+                var kgMatch = WeightKgPattern.Match(lowerLine);
+                var lbsMatch = WeightLbsPattern.Match(lowerLine);
                 
                 if (kgMatch.Success && double.TryParse(kgMatch.Groups[1].Value, out double kgWeight))
                 {
@@ -394,9 +421,9 @@ public partial class Form1 : Form
                     cmbWeightUnit.SelectedItem = "lbs";
                 }
                 
-                // Look for height (cm or inches)
-                var cmMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(height|length).*?(\d+\.?\d*)\s*cm");
-                var inMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(height|length).*?(\d+\.?\d*)\s*(in|inch)");
+                // Look for height (cm or inches) using compiled regex
+                var cmMatch = HeightCmPattern.Match(lowerLine);
+                var inMatch = HeightInPattern.Match(lowerLine);
                 
                 if (cmMatch.Success && double.TryParse(cmMatch.Groups[2].Value, out double cmHeight))
                 {
@@ -409,9 +436,9 @@ public partial class Form1 : Form
                     cmbHeightUnit.SelectedItem = "in";
                 }
                 
-                // Look for head circumference
-                var headCmMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"head.*?(\d+\.?\d*)\s*cm");
-                var headInMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"head.*?(\d+\.?\d*)\s*(in|inch)");
+                // Look for head circumference using compiled regex
+                var headCmMatch = HeadCmPattern.Match(lowerLine);
+                var headInMatch = HeadInPattern.Match(lowerLine);
                 
                 if (headCmMatch.Success && double.TryParse(headCmMatch.Groups[1].Value, out double headCm))
                 {
@@ -429,18 +456,7 @@ public partial class Form1 : Form
             txtGrowthNotes.Text = $"Imported from OCR:\n{text}";
             
             // Switch to growth tab
-            var tabControl = Controls.Find("tabControl", true).FirstOrDefault() as TabControl;
-            if (tabControl != null)
-            {
-                for (int i = 0; i < tabControl.TabPages.Count; i++)
-                {
-                    if (tabControl.TabPages[i].Text == "Growth")
-                    {
-                        tabControl.SelectedIndex = i;
-                        break;
-                    }
-                }
-            }
+            SwitchToTab("Growth");
             
             MessageBox.Show("Growth form populated with extracted data. Please review and adjust before saving.", 
                 "Data Populated", MessageBoxButtons.OK, MessageBoxIcon.Information);

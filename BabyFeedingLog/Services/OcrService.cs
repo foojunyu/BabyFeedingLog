@@ -12,11 +12,20 @@ public class OcrService
         string appPath = AppDomain.CurrentDomain.BaseDirectory;
         _tessDataPath = Path.Combine(appPath, "tessdata");
         
-        // If not found, try the project directory
+        // If not found, search in parent directories (for development/debug scenarios)
         if (!Directory.Exists(_tessDataPath))
         {
-            string projectPath = Path.GetFullPath(Path.Combine(appPath, @"..\..\..\"));
-            _tessDataPath = Path.Combine(projectPath, "tessdata");
+            var currentDir = new DirectoryInfo(appPath);
+            while (currentDir != null && currentDir.Parent != null)
+            {
+                var testPath = Path.Combine(currentDir.FullName, "tessdata");
+                if (Directory.Exists(testPath))
+                {
+                    _tessDataPath = testPath;
+                    break;
+                }
+                currentDir = currentDir.Parent;
+            }
         }
     }
 
