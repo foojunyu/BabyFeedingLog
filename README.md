@@ -9,6 +9,7 @@ A Windows desktop application for monitoring and tracking infant progress. This 
 - **Diaper Changes**: Track diaper changes with type (wet, dirty, both) and timing
 - **Sleep Schedule**: Monitor sleep patterns with start/end times and duration
 - **Growth Measurements**: Record weight, height, and head circumference over time
+- **OCR Import**: Extract text from images (receipts, medical records, notes) and populate form fields automatically
 
 ### 💾 Data Persistence
 - All data is automatically saved to your local machine
@@ -77,6 +78,19 @@ A Windows desktop application for monitoring and tracking infant progress. This 
 3. Choose appropriate units
 4. Click "Add Growth Entry"
 
+#### OCR Import (Extract text from images)
+1. Go to the "OCR Import" tab
+2. Click "Select Image" and choose an image with text (photo of medical records, notes, etc.)
+3. Click "Extract Text" to use OCR to read the text from the image
+4. Click "Parse to Feeding" or "Parse to Growth" to automatically populate form fields
+5. Review the populated data in the respective tab and save
+
+The OCR feature can recognize:
+- Feeding amounts (ml, oz)
+- Feeding types (breast, bottle, solid)
+- Growth measurements (weight in kg/lbs, height in cm/inches, head circumference)
+- Automatically switches to the appropriate tab with pre-filled data
+
 ### Viewing Statistics
 Go to the "Statistics" tab to view:
 - Today's activity summary
@@ -95,6 +109,7 @@ You can backup this file to preserve your data.
 - .NET 8.0
 - Windows Forms
 - System.Text.Json for data serialization
+- Tesseract OCR for text extraction from images
 
 ## Project Structure
 
@@ -107,7 +122,10 @@ BabyFeedingLog/
 │   ├── SleepEntry.cs       # Sleep session record
 │   └── GrowthEntry.cs      # Growth measurement record
 ├── Services/               # Business logic
-│   └── DataManager.cs      # Data persistence service
+│   ├── DataManager.cs      # Data persistence service
+│   └── OcrService.cs       # OCR text extraction service
+├── tessdata/               # Tesseract language data
+│   └── eng.traineddata     # English language training data
 ├── Form1.cs               # Main form logic
 ├── Form1.Designer.cs      # UI design
 ├── Program.cs             # Application entry point

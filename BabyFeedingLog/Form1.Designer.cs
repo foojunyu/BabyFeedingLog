@@ -35,6 +35,7 @@ partial class Form1
         TabPage tabGrowth;
         TabPage tabBabyInfo;
         TabPage tabStatistics;
+        TabPage tabOcr;
 
         tabControl = new TabControl();
         tabFeeding = new TabPage();
@@ -43,6 +44,7 @@ partial class Form1
         tabGrowth = new TabPage();
         tabBabyInfo = new TabPage();
         tabStatistics = new TabPage();
+        tabOcr = new TabPage();
 
         SuspendLayout();
 
@@ -71,6 +73,7 @@ partial class Form1
         tabControl.Controls.Add(tabSleep);
         tabControl.Controls.Add(tabGrowth);
         tabControl.Controls.Add(tabBabyInfo);
+        tabControl.Controls.Add(tabOcr);
         tabControl.Controls.Add(tabStatistics);
         Controls.Add(tabControl);
 
@@ -244,6 +247,67 @@ partial class Form1
 
         tabStatistics.Controls.AddRange(new Control[] { lblStats, txtStats });
 
+        // === OCR Tab ===
+        tabOcr.Text = "OCR Import";
+        tabOcr.Padding = new Padding(10);
+
+        var lblOcrTitle = new Label { Location = new Point(20, 20), Size = new Size(400, 23), Text = "Extract Text from Image (OCR):", Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
+        
+        var lblOcrInstructions = new Label 
+        { 
+            Location = new Point(20, 50), 
+            Size = new Size(900, 60), 
+            Text = "Upload an image containing text (feeding details, measurements, etc.) and the application will extract the text.\n" +
+                   "The extracted text will be displayed below, and you can then parse it to populate form fields.",
+            Font = new Font("Segoe UI", 9F)
+        };
+
+        btnSelectImage = new Button { Location = new Point(20, 120), Size = new Size(150, 35), Text = "Select Image", Font = new Font("Segoe UI", 10F) };
+        btnSelectImage.Click += btnSelectImage_Click;
+
+        btnExtractText = new Button { Location = new Point(180, 120), Size = new Size(150, 35), Text = "Extract Text", Font = new Font("Segoe UI", 10F), Enabled = false };
+        btnExtractText.Click += btnExtractText_Click;
+
+        btnPopulateFeeding = new Button { Location = new Point(340, 120), Size = new Size(180, 35), Text = "Parse to Feeding", Font = new Font("Segoe UI", 10F), Enabled = false };
+        btnPopulateFeeding.Click += btnPopulateFeeding_Click;
+
+        btnPopulateGrowth = new Button { Location = new Point(530, 120), Size = new Size(180, 35), Text = "Parse to Growth", Font = new Font("Segoe UI", 10F), Enabled = false };
+        btnPopulateGrowth.Click += btnPopulateGrowth_Click;
+
+        var lblImagePreview = new Label { Location = new Point(20, 165), Size = new Size(150, 23), Text = "Image Preview:" };
+        picImagePreview = new PictureBox 
+        { 
+            Location = new Point(20, 190), 
+            Size = new Size(300, 300), 
+            BorderStyle = BorderStyle.FixedSingle,
+            SizeMode = PictureBoxSizeMode.Zoom
+        };
+
+        var lblExtractedText = new Label { Location = new Point(340, 165), Size = new Size(150, 23), Text = "Extracted Text:" };
+        txtExtractedText = new TextBox 
+        { 
+            Location = new Point(340, 190), 
+            Size = new Size(580, 300), 
+            Multiline = true, 
+            ScrollBars = ScrollBars.Vertical,
+            Font = new Font("Consolas", 9F)
+        };
+
+        var lblOcrStatus = new Label { Location = new Point(20, 500), Size = new Size(100, 23), Text = "Status:" };
+        lblOcrStatusMessage = new Label 
+        { 
+            Location = new Point(120, 500), 
+            Size = new Size(800, 60), 
+            Text = "Ready. Select an image to begin.",
+            ForeColor = Color.DarkGreen,
+            Font = new Font("Segoe UI", 9F)
+        };
+
+        tabOcr.Controls.AddRange(new Control[] { 
+            lblOcrTitle, lblOcrInstructions, btnSelectImage, btnExtractText, btnPopulateFeeding, btnPopulateGrowth,
+            lblImagePreview, picImagePreview, lblExtractedText, txtExtractedText, lblOcrStatus, lblOcrStatusMessage 
+        });
+
         ResumeLayout(false);
     }
 
@@ -295,5 +359,14 @@ partial class Form1
 
     // Statistics
     private TextBox txtStats;
+
+    // OCR
+    private Button btnSelectImage;
+    private Button btnExtractText;
+    private Button btnPopulateFeeding;
+    private Button btnPopulateGrowth;
+    private PictureBox picImagePreview;
+    private TextBox txtExtractedText;
+    private Label lblOcrStatusMessage;
 }
 

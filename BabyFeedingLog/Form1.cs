@@ -7,11 +7,14 @@ public partial class Form1 : Form
 {
     private InfantInfo _infantInfo = new();
     private readonly DataManager _dataManager;
+    private readonly OcrService _ocrService;
+    private string? _selectedImagePath;
 
     public Form1()
     {
         InitializeComponent();
         _dataManager = new DataManager();
+        _ocrService = new OcrService();
         LoadData();
         UpdateUI();
     }
@@ -211,5 +214,240 @@ public partial class Form1 : Form
     private void Form1_FormClosing(object sender, FormClosingEventArgs e)
     {
         SaveData();
+    }
+
+    // OCR Tab
+    private void btnSelectImage_Click(object sender, EventArgs e)
+    {
+        using var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff|All Files|*.*",
+            Title = "Select an Image with Text"
+        };
+
+        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        {
+            try
+            {
+                _selectedImagePath = openFileDialog.FileName;
+                
+                // Load and display the image
+                using var originalImage = Image.FromFile(_selectedImagePath);
+                picImagePreview.Image = new Bitmap(originalImage);
+                
+                // Enable extract button
+                btnExtractText.Enabled = true;
+                txtExtractedText.Clear();
+                btnPopulateFeeding.Enabled = false;
+                btnPopulateGrowth.Enabled = false;
+                
+                lblOcrStatusMessage.Text = $"Image loaded: {Path.GetFileName(_selectedImagePath)}";
+                lblOcrStatusMessage.ForeColor = Color.DarkGreen;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblOcrStatusMessage.Text = "Error loading image.";
+                lblOcrStatusMessage.ForeColor = Color.DarkRed;
+            }
+        }
+    }
+
+    private void btnExtractText_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(_selectedImagePath))
+        {
+            MessageBox.Show("Please select an image first.", "No Image", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            lblOcrStatusMessage.Text = "Extracting text from image...";
+            lblOcrStatusMessage.ForeColor = Color.DarkBlue;
+            Application.DoEvents();
+
+            string extractedText = _ocrService.ExtractTextFromImage(_selectedImagePath);
+            
+            if (string.IsNullOrWhiteSpace(extractedText))
+            {
+                txtExtractedText.Text = "(No text detected in image)";
+                lblOcrStatusMessage.Text = "No text detected in image.";
+                lblOcrStatusMessage.ForeColor = Color.DarkOrange;
+            }
+            else
+            {
+                txtExtractedText.Text = extractedText;
+                btnPopulateFeeding.Enabled = true;
+                btnPopulateGrowth.Enabled = true;
+                lblOcrStatusMessage.Text = $"Text extracted successfully! ({extractedText.Length} characters)";
+                lblOcrStatusMessage.ForeColor = Color.DarkGreen;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error extracting text: {ex.Message}", "OCR Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            lblOcrStatusMessage.Text = "Error extracting text.";
+            lblOcrStatusMessage.ForeColor = Color.DarkRed;
+        }
+    }
+
+    private void btnPopulateFeeding_Click(object sender, EventArgs e)
+    {
+        string text = txtExtractedText.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            MessageBox.Show("No text available to parse.", "No Text", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            // Simple parsing logic - look for feeding-related keywords and numbers
+            var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            
+            // Look for amount/volume
+            foreach (var line in lines)
+            {
+                var lowerLine = line.ToLower();
+                
+                // Look for ml or oz amounts
+                var mlMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(\d+\.?\d*)\s*ml");
+                var ozMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(\d+\.?\d*)\s*oz");
+                
+                if (mlMatch.Success && double.TryParse(mlMatch.Groups[1].Value, out double mlAmount))
+                {
+                    nudFeedingAmount.Value = (decimal)Math.Min(mlAmount, (double)nudFeedingAmount.Maximum);
+                    cmbFeedingUnit.SelectedItem = "ml";
+                }
+                else if (ozMatch.Success && double.TryParse(ozMatch.Groups[1].Value, out double ozAmount))
+                {
+                    nudFeedingAmount.Value = (decimal)Math.Min(ozAmount, (double)nudFeedingAmount.Maximum);
+                    cmbFeedingUnit.SelectedItem = "oz";
+                }
+                
+                // Look for feeding type keywords
+                if (lowerLine.Contains("breast"))
+                    cmbFeedingType.SelectedItem = "Breast";
+                else if (lowerLine.Contains("bottle"))
+                    cmbFeedingType.SelectedItem = "Bottle";
+                else if (lowerLine.Contains("solid") || lowerLine.Contains("food"))
+                    cmbFeedingType.SelectedItem = "Solid";
+            }
+            
+            // Set the notes with the original text
+            txtFeedingNotes.Text = $"Imported from OCR:\n{text}";
+            
+            // Switch to feeding tab
+            var tabControl = Controls.Find("tabControl", true).FirstOrDefault() as TabControl;
+            if (tabControl != null)
+            {
+                for (int i = 0; i < tabControl.TabPages.Count; i++)
+                {
+                    if (tabControl.TabPages[i].Text == "Feeding")
+                    {
+                        tabControl.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            MessageBox.Show("Feeding form populated with extracted data. Please review and adjust before saving.", 
+                "Data Populated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error parsing text: {ex.Message}", "Parse Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void btnPopulateGrowth_Click(object sender, EventArgs e)
+    {
+        string text = txtExtractedText.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            MessageBox.Show("No text available to parse.", "No Text", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            // Simple parsing logic - look for weight, height, head circumference
+            var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var line in lines)
+            {
+                var lowerLine = line.ToLower();
+                
+                // Look for weight (kg or lbs)
+                var kgMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"weight.*?(\d+\.?\d*)\s*kg");
+                var lbsMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"weight.*?(\d+\.?\d*)\s*(lbs|lb|pounds?)");
+                
+                if (kgMatch.Success && double.TryParse(kgMatch.Groups[1].Value, out double kgWeight))
+                {
+                    nudWeight.Value = (decimal)Math.Min(kgWeight, (double)nudWeight.Maximum);
+                    cmbWeightUnit.SelectedItem = "kg";
+                }
+                else if (lbsMatch.Success && double.TryParse(lbsMatch.Groups[1].Value, out double lbsWeight))
+                {
+                    nudWeight.Value = (decimal)Math.Min(lbsWeight, (double)nudWeight.Maximum);
+                    cmbWeightUnit.SelectedItem = "lbs";
+                }
+                
+                // Look for height (cm or inches)
+                var cmMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(height|length).*?(\d+\.?\d*)\s*cm");
+                var inMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"(height|length).*?(\d+\.?\d*)\s*(in|inch)");
+                
+                if (cmMatch.Success && double.TryParse(cmMatch.Groups[2].Value, out double cmHeight))
+                {
+                    nudHeight.Value = (decimal)Math.Min(cmHeight, (double)nudHeight.Maximum);
+                    cmbHeightUnit.SelectedItem = "cm";
+                }
+                else if (inMatch.Success && double.TryParse(inMatch.Groups[2].Value, out double inHeight))
+                {
+                    nudHeight.Value = (decimal)Math.Min(inHeight, (double)nudHeight.Maximum);
+                    cmbHeightUnit.SelectedItem = "in";
+                }
+                
+                // Look for head circumference
+                var headCmMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"head.*?(\d+\.?\d*)\s*cm");
+                var headInMatch = System.Text.RegularExpressions.Regex.Match(lowerLine, @"head.*?(\d+\.?\d*)\s*(in|inch)");
+                
+                if (headCmMatch.Success && double.TryParse(headCmMatch.Groups[1].Value, out double headCm))
+                {
+                    nudHeadCirc.Value = (decimal)Math.Min(headCm, (double)nudHeadCirc.Maximum);
+                    cmbHeadCircUnit.SelectedItem = "cm";
+                }
+                else if (headInMatch.Success && double.TryParse(headInMatch.Groups[1].Value, out double headIn))
+                {
+                    nudHeadCirc.Value = (decimal)Math.Min(headIn, (double)nudHeadCirc.Maximum);
+                    cmbHeadCircUnit.SelectedItem = "in";
+                }
+            }
+            
+            // Set the notes with the original text
+            txtGrowthNotes.Text = $"Imported from OCR:\n{text}";
+            
+            // Switch to growth tab
+            var tabControl = Controls.Find("tabControl", true).FirstOrDefault() as TabControl;
+            if (tabControl != null)
+            {
+                for (int i = 0; i < tabControl.TabPages.Count; i++)
+                {
+                    if (tabControl.TabPages[i].Text == "Growth")
+                    {
+                        tabControl.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            MessageBox.Show("Growth form populated with extracted data. Please review and adjust before saving.", 
+                "Data Populated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error parsing text: {ex.Message}", "Parse Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 }
